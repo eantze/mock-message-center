@@ -13,11 +13,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Stub action buttons
-    document.querySelectorAll('.btn-secondary, .table-action').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            // No-op for Phase 1
-        });
-    });
 });
+
+// --- Document Center: move attachment ---
+function moveToDocCenter(btn) {
+    var attachmentId = btn.getAttribute('data-attachment-id');
+    var folder = prompt('Move to which folder? (leave blank for "Unfiled")', 'Unfiled');
+    if (folder === null) return; // cancelled
+    if (!folder.trim()) folder = 'Unfiled';
+    var form = new FormData();
+    form.append('attachment_id', attachmentId);
+    form.append('folder', folder.trim());
+    fetch('/api/documents/move', { method: 'POST', body: form })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                btn.textContent = 'Moved to ' + data.folder;
+                btn.disabled = true;
+                btn.classList.add('btn-moved');
+            } else {
+                alert(data.error || 'Error moving document');
+            }
+        });
+}

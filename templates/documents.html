@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block page_title %}Document Center{% endblock %}
+
+{% block content %}
+<div class="stub-page">
+    <div class="doc-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Document Center is a demo — contents reset on restart.
+    </div>
+
+    <div class="doc-layout">
+        <!-- Folder list -->
+        <div class="doc-folders">
+            <div class="doc-folders-header">
+                <h3>Folders</h3>
+                <button class="btn btn-sm btn-primary" onclick="createFolder()">+ New Folder</button>
+            </div>
+            <nav class="doc-folder-list">
+                {% for f in folders %}
+                <a href="{{ url_for('documents_page', folder_name=f) }}"
+                   class="doc-folder-item{% if f == current_doc_folder %} active{% endif %}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    <span>{{ f }}</span>
+                </a>
+                {% endfor %}
+            </nav>
+        </div>
+
+        <!-- Document list -->
+        <div class="doc-contents">
+            <h3 class="doc-contents-title">{{ current_doc_folder }}</h3>
+            {% if documents %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Source Message</th>
+                        <th>Date Added</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td class="td-bold">{{ doc.display_name }}</td>
+                        <td>{{ doc.source_subject }}</td>
+                        <td>{{ doc.date_moved }}</td>
+                        <td>
+                            <a href="{{ url_for('static', filename='docs/' + doc.filename) }}" target="_blank" class="table-action">Open</a>
+                            <button class="table-action text-danger" style="border:none;background:none;cursor:pointer;" onclick="removeDoc({{ doc.attachment_id }})">Remove</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <p>No documents in this folder.</p>
+                <p style="font-size:12px;color:#aaa;">Use "Move to Document Center" on message attachments to add documents here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function createFolder() {
+    var name = prompt('Enter folder name:');
+    if (!name || !name.trim()) return;
+    var form = new FormData();
+    form.append('name', name.trim());
+    fetch('/api/documents/folder', { method: 'POST', body: form })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                window.location.href = '/documents/' + encodeURIComponent(name.trim());
+            } else {
+                alert(data.error || 'Error creating folder');
+            }
+        });
+}
+
+function removeDoc(attachmentId) {
+    if (!confirm('Remove this document from the Document Center?')) return;
+    var form = new FormData();
+    form.append('attachment_id', attachmentId);
+    fetch('/api/documents/remove', { method: 'POST', body: form })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) location.reload();
+        });
+}
+</script>
+{% endblock %}

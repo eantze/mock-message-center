@@ -1,11 +1,18 @@
 import os
 import sqlite3
 from datetime import datetime, timedelta
-from flask import Flask, g, redirect, render_template, url_for
+from flask import Flask, g, redirect, render_template, request, session, url_for, jsonify
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "app.db")
 DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "docs")
+
+# ---------------------------------------------------------------------------
+# Document Center — in-memory storage (resets on restart)
+# ---------------------------------------------------------------------------
+# Structure: { session_id: { "folders": ["Unfiled", ...], "documents": [ {doc}, ... ] } }
+doc_center_store = {}
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -762,6 +769,101 @@ def claims_page():
         "claims_page.html", claims=claims,
         current_folder="claims", unread_count=unread_count,
     )
+
+
+# ---------------------------------------------------------------------------
+# Document Center helpers
+# ---------------------------------------------------------------------------
+
+def get_doc_store():
+    """Get or create the document center store for the current session."""
+    sid = session.get("_id")
+    if not sid:
+        import uuid
+        sid = str(uuid.uuid4())
+        session["_id"] = sid
+    if sid not in doc_center_store:
+        doc_center_store[sid] = {"folders": ["Unfiled"], "documents": []}
+    return doc_center_store[sid]
+
+
+# ---------------------------------------------------------------------------
+# Document Center routes
+# ---------------------------------------------------------------------------
+
+@app.route("/documents")
+@app.route("/documents/<folder_name>")
+def documents_page(folder_name=None):
+    store = get_doc_store()
+    folders = store["folders"]
+    if folder_name is None:
+        folder_name = folders[0] if folders else "Unfiled"
+    docs_in_folder = [d for d in store["documents"] if d["folder"] == folder_name]
+    unread_count = get_db().execute(
+        "SELECT COUNT(*) as c FROM messages WHERE folder = 'inbox' AND is_read = 0"
+    ).fetchone()["c"]
+    return render_template(
+        "documents.html",
+        folders=folders, current_doc_folder=folder_name,
+        documents=docs_in_folder, current_folder="documents",
+        unread_count=unread_count,
+    )
+
+
+@app.route("/api/documents/move", methods=["POST"])
+def move_to_doc_center():
+    """Move an attachment to the Document Center."""
+    store = get_doc_store()
+    db = get_db()
+    attachment_id = request.form.get("attachment_id", type=int)
+    folder_name = request.form.get("folder", "Unfiled")
+
+    att = db.execute("SELECT * FROM attachments WHERE id = ?", (attachment_id,)).fetchone()
+    if not att:
+        return jsonify({"error": "Attachment not found"}), 404
+
+    msg = db.execute("SELECT subject FROM messages WHERE id = ?", (att["message_id"],)).fetchone()
+
+    # Don't add duplicates
+    for d in store["documents"]:
+        if d["attachment_id"] == attachment_id:
+            return jsonify({"error": "Already in Document Center"}), 409
+
+    if folder_name not in store["folders"]:
+        store["folders"].append(folder_name)
+
+    store["documents"].append({
+        "attachment_id": attachment_id,
+        "filename": att["filename"],
+        "display_name": att["display_name"],
+        "source_subject": msg["subject"] if msg else "Unknown",
+        "folder": folder_name,
+        "date_moved": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    })
+
+    return jsonify({"ok": True, "folder": folder_name})
+
+
+@app.route("/api/documents/folder", methods=["POST"])
+def create_doc_folder():
+    """Create a new folder in the Document Center."""
+    store = get_doc_store()
+    name = request.form.get("name", "").strip()
+    if not name:
+        return jsonify({"error": "Folder name required"}), 400
+    if name in store["folders"]:
+        return jsonify({"error": "Folder already exists"}), 409
+    store["folders"].append(name)
+    return jsonify({"ok": True, "name": name})
+
+
+@app.route("/api/documents/remove", methods=["POST"])
+def remove_from_doc_center():
+    """Remove a document from the Document Center."""
+    store = get_doc_store()
+    attachment_id = request.form.get("attachment_id", type=int)
+    store["documents"] = [d for d in store["documents"] if d["attachment_id"] != attachment_id]
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------
