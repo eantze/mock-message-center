@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Center - Insurance Company</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top utility bar -->
+    <div class="top-bar">
+        <div class="top-bar-inner">
+            <div class="top-bar-left">
+                <select class="lang-select" aria-label="Language">
+                    <option>English</option>
+                    <option>Espa&ntilde;ol</option>
+                    <option>Tagalog</option>
+                    <option>Ti&ecirc;ng Vi&ecirc;t</option>
+                </select>
+            </div>
+            <div class="top-bar-right">
+                <a href="#" class="top-link">Account</a>
+                <a href="#" class="top-link">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header / branding -->
+    <header class="main-header">
+        <div class="header-inner">
+            <div class="brand">
+                <svg class="brand-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="6" fill="#0057b8"/>
+                    <path d="M8 16h16M16 8v16M10 10l12 12M22 10L10 22" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="brand-name">Insurance Company</span>
+            </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('benefits_page') }}" class="nav-link">Coverage &amp; Benefits</a>
+                <a href="#" class="nav-link">Find a Doctor</a>
+                <a href="#" class="nav-link">Be Well</a>
+                <a href="#" class="nav-link">Get More</a>
+                <a href="#" class="nav-link nav-search" aria-label="Search">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Page heading -->
+    <div class="page-heading">
+        <div class="page-heading-inner">
+            <h1>{% block page_title %}Message Center{% endblock %}</h1>
+        </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                {% for key, label, route in folder_sidebar %}
+                <a href="{% if route == 'folder_view' %}{{ url_for('folder_view', folder=key) }}{% elif route %}{{ url_for(route) }}{% else %}#{% endif %}"
+                   class="sidebar-item{% if current_folder == key %} active{% endif %}">
+                    <span class="sidebar-icon">
+                        {% if key == 'inbox' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        {% elif key == 'appointments' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {% elif key == 'benefits' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        {% elif key == 'billing' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        {% elif key == 'claims' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        {% elif key == 'health' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        {% elif key == 'pharmacy' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        {% elif key == 'sent' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        {% elif key == 'archive' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                        {% elif key == 'trash' %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        {% endif %}
+                    </span>
+                    <span class="sidebar-label">{{ label }}</span>
+                    {% if key == 'inbox' and unread_count > 0 %}
+                        <span class="badge">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

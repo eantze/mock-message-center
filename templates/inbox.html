@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="inbox-layout">
+    <!-- Message list panel -->
+    <div class="message-list-panel">
+        <!-- Filter bar -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                {% for cat in categories %}
+                <a href="{{ url_for('folder_category_view', folder=current_folder, category=cat) }}"
+                   class="filter-tab{% if filter_category == cat or (filter_category is none and cat == 'All') %} active{% endif %}">
+                    {{ cat }}
+                </a>
+                {% endfor %}
+            </div>
+            <div class="message-count">
+                {{ messages|length }} message{{ 's' if messages|length != 1 else '' }}
+            </div>
+        </div>
+
+        <!-- Message list -->
+        <div class="message-list">
+            {% if messages %}
+                {% for msg in messages %}
+                <a href="{{ url_for('message_detail', message_id=msg.id) }}"
+                   class="message-item{% if selected and msg.id == selected.id %} selected{% endif %}{% if not msg.is_read %} unread{% endif %}">
+                    <div class="message-item-header">
+                        <span class="message-category cat-{{ msg.category|lower }}">{{ msg.category }}</span>
+                        <span class="message-date">{{ msg.received_at|datefmt }}</span>
+                    </div>
+                    <div class="message-subject">{{ msg.subject }}</div>
+                    <div class="message-preview">{{ msg.preview }}</div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No messages in this folder.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Message detail panel -->
+    <div class="message-detail-panel">
+        {% if selected %}
+            <div class="detail-header">
+                <h2 class="detail-subject">{{ selected.subject }}</h2>
+                <div class="detail-meta">
+                    <span class="detail-category cat-{{ selected.category|lower }}">{{ selected.category }}</span>
+                    <span class="detail-date">{{ selected.received_at|fulldatefmt }}</span>
+                </div>
+            </div>
+            <div class="detail-body">
+                {{ selected.body_html|safe }}
+            </div>
+
+            {% if claim %}
+            <div class="detail-card">
+                <h3>Claim Details</h3>
+                <table class="info-table">
+                    <tr><td class="label">Claim ID:</td><td>#{{ claim.id }}</td></tr>
+                    <tr><td class="label">Provider:</td><td>{{ claim.provider }}</td></tr>
+                    <tr><td class="label">Service Date:</td><td>{{ claim.service_date }}</td></tr>
+                    <tr><td class="label">Amount:</td><td>${{ "%.2f"|format(claim.amount) }}</td></tr>
+                    <tr>
+                        <td class="label">Status:</td>
+                        <td>
+                            <span class="status-badge status-{{ claim.status|lower|replace(' ', '-') }}">
+                                {{ claim.status }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if appointment %}
+            <div class="detail-card">
+                <h3>Appointment Details</h3>
+                <table class="info-table">
+                    <tr><td class="label">Doctor:</td><td>{{ appointment.doctor }}</td></tr>
+                    <tr><td class="label">Specialty:</td><td>{{ appointment.specialty }}</td></tr>
+                    <tr><td class="label">Location:</td><td>{{ appointment.location }}</td></tr>
+                    <tr><td class="label">Date/Time:</td><td>{{ appointment.starts_at|apptdatefmt }}</td></tr>
+                    {% if appointment.notes %}
+                    <tr><td class="label">Notes:</td><td>{{ appointment.notes }}</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+            {% endif %}
+
+            {% if attachments %}
+            <div class="detail-attachments">
+                <h3>Attachments</h3>
+                {% for att in attachments %}
+                <a href="{{ url_for('static', filename='docs/' + att.filename) }}" target="_blank" class="attachment-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>{{ att.display_name }}</span>
+                    <span class="att-type">PDF</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="detail-actions">
+                <button class="btn btn-primary">Reply</button>
+                <button class="btn btn-secondary">Archive</button>
+                <button class="btn btn-secondary">Delete</button>
+            </div>
+        {% else %}
+            <div class="empty-state detail-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <p>Select a message to view</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

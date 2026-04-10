@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block page_title %}Billing{% endblock %}
+
+{% block content %}
+<div class="stub-page">
+    <div class="stub-header">
+        <h2>Billing &amp; Payments</h2>
+    </div>
+
+    <div class="billing-summary">
+        <div class="billing-card">
+            <div class="billing-card-label">Current Balance</div>
+            <div class="billing-card-value">$0.00</div>
+            <div class="billing-card-sub">No balance due</div>
+        </div>
+        <div class="billing-card">
+            <div class="billing-card-label">Monthly Premium</div>
+            <div class="billing-card-value">$485.00</div>
+            <div class="billing-card-sub">Next due: May 1, 2026</div>
+        </div>
+        <div class="billing-card">
+            <div class="billing-card-label">Payment Method</div>
+            <div class="billing-card-value billing-card-small">Visa ending 4821</div>
+            <div class="billing-card-sub">Auto-pay enrolled</div>
+        </div>
+    </div>
+
+    <h3 class="section-title">Recent Payment History</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Apr 1, 2026</td>
+                <td>Monthly Premium - April 2026</td>
+                <td>$485.00</td>
+                <td><span class="status-badge status-payment-sent">Paid</span></td>
+            </tr>
+            <tr>
+                <td>Mar 1, 2026</td>
+                <td>Monthly Premium - March 2026</td>
+                <td>$485.00</td>
+                <td><span class="status-badge status-payment-sent">Paid</span></td>
+            </tr>
+            <tr>
+                <td>Feb 1, 2026</td>
+                <td>Monthly Premium - February 2026</td>
+                <td>$485.00</td>
+                <td><span class="status-badge status-payment-sent">Paid</span></td>
+            </tr>
+            <tr>
+                <td>Jan 1, 2026</td>
+                <td>Monthly Premium - January 2026</td>
+                <td>$485.00</td>
+                <td><span class="status-badge status-payment-sent">Paid</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

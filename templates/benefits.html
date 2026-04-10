@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block page_title %}Coverage &amp; Benefits{% endblock %}
+
+{% block content %}
+<div class="stub-page">
+    <div class="stub-header">
+        <h2>Your Benefits Summary</h2>
+    </div>
+
+    <div class="benefits-grid">
+        <div class="benefit-card">
+            <h3>Plan Information</h3>
+            <table class="info-table">
+                <tr><td class="label">Plan Name:</td><td>PPO Gold 1500</td></tr>
+                <tr><td class="label">Member ID:</td><td>HCP-2025-00412</td></tr>
+                <tr><td class="label">Group Number:</td><td>GRP-88421</td></tr>
+                <tr><td class="label">Effective Date:</td><td>January 1, 2025</td></tr>
+            </table>
+        </div>
+
+        <div class="benefit-card">
+            <h3>Deductible &amp; Out-of-Pocket</h3>
+            <table class="info-table">
+                <tr><td class="label">Annual Deductible:</td><td>$1,500.00</td></tr>
+                <tr><td class="label">Deductible Met:</td><td>$875.00</td></tr>
+                <tr><td class="label">Out-of-Pocket Max:</td><td>$6,500.00</td></tr>
+                <tr><td class="label">OOP Applied:</td><td>$1,230.00</td></tr>
+            </table>
+            <div class="progress-bar-container">
+                <div class="progress-label">Deductible Progress</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 58%"></div>
+                </div>
+                <div class="progress-text">$875 of $1,500 (58%)</div>
+            </div>
+        </div>
+
+        <div class="benefit-card">
+            <h3>Copays &amp; Coinsurance</h3>
+            <table class="info-table">
+                <tr><td class="label">Primary Care Visit:</td><td>$25 copay</td></tr>
+                <tr><td class="label">Specialist Visit:</td><td>$50 copay</td></tr>
+                <tr><td class="label">Urgent Care:</td><td>$75 copay</td></tr>
+                <tr><td class="label">Emergency Room:</td><td>$250 copay</td></tr>
+                <tr><td class="label">Telehealth:</td><td>$10 copay</td></tr>
+                <tr><td class="label">Generic Rx:</td><td>$15 copay</td></tr>
+                <tr><td class="label">Brand Rx:</td><td>$40 copay</td></tr>
+            </table>
+        </div>
+
+        <div class="benefit-card">
+            <h3>Preventive Care</h3>
+            <table class="info-table">
+                <tr><td class="label">Annual Physical:</td><td>$0 (covered 100%)</td></tr>
+                <tr><td class="label">Immunizations:</td><td>$0 (covered 100%)</td></tr>
+                <tr><td class="label">Screenings:</td><td>$0 (covered 100%)</td></tr>
+                <tr><td class="label">Well-Woman Visit:</td><td>$0 (covered 100%)</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
