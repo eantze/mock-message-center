@@ -1,7 +1,10 @@
 import os
 import sqlite3
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from flask import Flask, g, redirect, render_template, request, session, url_for, jsonify
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
@@ -71,6 +74,11 @@ def init_db():
             service_date TEXT NOT NULL,
             amount REAL NOT NULL,
             status TEXT NOT NULL DEFAULT 'Received'
+        );
+        CREATE TABLE IF NOT EXISTS glossary_cache (
+            term TEXT PRIMARY KEY,
+            definition TEXT NOT NULL,
+            created_at TEXT NOT NULL
         );
     """)
     db.commit()
@@ -564,6 +572,12 @@ def seed_data(db):
 # Template helpers
 # ---------------------------------------------------------------------------
 
+def find_glossary_terms(body_html: str) -> list:
+    """Return list of GLOSSARY_TERMS found (case-insensitive) in body_html."""
+    body_lower = body_html.lower()
+    return [t for t in GLOSSARY_TERMS if t.lower() in body_lower]
+
+
 FOLDER_SIDEBAR = [
     ("inbox", "Inbox", "folder_view"),
     ("appointments", "Appointments", "appointments_page"),
@@ -652,11 +666,13 @@ def folder_view(folder):
     unread_count = db.execute(
         "SELECT COUNT(*) as c FROM messages WHERE folder = 'inbox' AND is_read = 0"
     ).fetchone()["c"]
+    glossary_terms = find_glossary_terms(selected["body_html"]) if selected else []
     return render_template(
         "inbox.html",
         messages=messages, selected=selected, attachments=attachments,
         claim=claim, appointment=appointment,
         current_folder=folder, unread_count=unread_count, filter_category=None,
+        glossary_terms=glossary_terms,
     )
 
 
@@ -687,11 +703,13 @@ def folder_category_view(folder, category):
     unread_count = db.execute(
         "SELECT COUNT(*) as c FROM messages WHERE folder = 'inbox' AND is_read = 0"
     ).fetchone()["c"]
+    glossary_terms = find_glossary_terms(selected["body_html"]) if selected else []
     return render_template(
         "inbox.html",
         messages=messages, selected=selected, attachments=attachments,
         claim=claim, appointment=appointment,
         current_folder=folder, unread_count=unread_count, filter_category=category,
+        glossary_terms=glossary_terms,
     )
 
 
@@ -721,11 +739,13 @@ def message_detail(message_id):
     unread_count = db.execute(
         "SELECT COUNT(*) as c FROM messages WHERE folder = 'inbox' AND is_read = 0"
     ).fetchone()["c"]
+    glossary_terms = find_glossary_terms(msg["body_html"])
     return render_template(
         "inbox.html",
         messages=messages, selected=msg, attachments=attachments,
         claim=claim, appointment=appointment,
         current_folder=folder, unread_count=unread_count, filter_category=None,
+        glossary_terms=glossary_terms,
     )
 
 
@@ -769,6 +789,66 @@ def claims_page():
         "claims_page.html", claims=claims,
         current_folder="claims", unread_count=unread_count,
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — Glossary & Ask-a-question routes
+# ---------------------------------------------------------------------------
+
+# Terms we look for in message bodies
+GLOSSARY_TERMS = [
+    "1095-B", "1099-HC", "Prior Authorization", "EOB",
+    "Deductible", "Copay", "Coinsurance", "Out-of-pocket max",
+]
+
+
+@app.route("/api/glossary/<path:term>", methods=["POST"])
+def glossary_term(term):
+    """Return a plain-English definition, cached in SQLite."""
+    import gemini_client
+    db = get_db()
+    row = db.execute(
+        "SELECT definition FROM glossary_cache WHERE term = ?", (term,)
+    ).fetchone()
+    if row:
+        return jsonify({"term": term, "definition": row["definition"]})
+    try:
+        definition = gemini_client.explain_term(term)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    db.execute(
+        "INSERT INTO glossary_cache (term, definition, created_at) VALUES (?,?,?)",
+        (term, definition, datetime.now().strftime("%Y-%m-%d %H:%M")),
+    )
+    db.commit()
+    return jsonify({"term": term, "definition": definition})
+
+
+@app.route("/api/ask", methods=["POST"])
+def ask_about_message():
+    """Multi-turn Gemini chat grounded in a specific message."""
+    import gemini_client
+    data = request.get_json(force=True)
+    message_id = data.get("message_id")
+    history = data.get("history", [])
+    user_msg = data.get("user_msg", "").strip()
+    if not user_msg:
+        return jsonify({"error": "user_msg required"}), 400
+    db = get_db()
+    msg = db.execute("SELECT * FROM messages WHERE id = ?", (message_id,)).fetchone()
+    if not msg:
+        return jsonify({"error": "Message not found"}), 404
+    try:
+        reply = gemini_client.ask_about_message(
+            subject=msg["subject"],
+            body=msg["body_html"],
+            category=msg["category"],
+            history=history,
+            user_msg=user_msg,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"reply": reply})
 
 
 # ---------------------------------------------------------------------------

@@ -45,12 +45,53 @@
     <div class="message-detail-panel">
         {% if selected %}
             <div class="detail-header">
-                <h2 class="detail-subject">{{ selected.subject }}</h2>
-                <div class="detail-meta">
-                    <span class="detail-category cat-{{ selected.category|lower }}">{{ selected.category }}</span>
-                    <span class="detail-date">{{ selected.received_at|fulldatefmt }}</span>
+                <div class="detail-header-top">
+                    <div>
+                        <h2 class="detail-subject">{{ selected.subject }}</h2>
+                        <div class="detail-meta">
+                            <span class="detail-category cat-{{ selected.category|lower }}">{{ selected.category }}</span>
+                            <span class="detail-date">{{ selected.received_at|fulldatefmt }}</span>
+                        </div>
+                    </div>
+                    <div class="detail-header-actions">
+                        {% if glossary_terms %}
+                        <button class="btn btn-glossary" onclick="toggleGlossary()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            Help Me Understand
+                            <span class="glossary-count">{{ glossary_terms|length }}</span>
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-ask" onclick="openAskModal()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            Ask a Question
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <!-- Glossary Drawer -->
+            {% if glossary_terms %}
+            <div class="glossary-drawer" id="glossaryDrawer">
+                <div class="glossary-drawer-header">
+                    <span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        Help Me Understand
+                    </span>
+                    <button class="glossary-close" onclick="toggleGlossary()">✕</button>
+                </div>
+                <div class="glossary-terms" id="glossaryTerms">
+                    {% for term in glossary_terms %}
+                    <div class="glossary-item" id="term-{{ loop.index }}">
+                        <div class="glossary-term-header">
+                            <span class="glossary-term-name">{{ term }}</span>
+                            <button class="glossary-load-btn" onclick="loadDefinition('{{ term }}', {{ loop.index }})">What is this?</button>
+                        </div>
+                        <div class="glossary-definition" id="def-{{ loop.index }}"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             <div class="detail-body">
                 {{ selected.body_html|safe }}
             </div>
@@ -117,6 +158,12 @@
                 <button class="btn btn-secondary">Archive</button>
                 <button class="btn btn-secondary">Delete</button>
             </div>
+
+            <!-- Hidden data for JS -->
+            <span id="msgData"
+                  data-message-id="{{ selected.id }}"
+                  data-subject="{{ selected.subject|e }}"
+                  style="display:none"></span>
         {% else %}
             <div class="empty-state detail-empty">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
@@ -126,6 +173,27 @@
                 <p>Select a message to view</p>
             </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Ask-a-Question Modal -->
+<div class="ask-modal-overlay" id="askModal" style="display:none" onclick="closeAskModal(event)">
+    <div class="ask-modal">
+        <div class="ask-modal-header">
+            <span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Ask about this message
+            </span>
+            <button class="ask-modal-close" onclick="closeAskModal()">✕</button>
+        </div>
+        <div class="ask-modal-subject" id="askModalSubject"></div>
+        <div class="ask-chat-history" id="askChatHistory"></div>
+        <div class="ask-input-row">
+            <input type="text" class="ask-input" id="askInput"
+                   placeholder="e.g. What do I need to pay? When is the deadline?"
+                   onkeydown="if(event.key==='Enter') sendAsk()">
+            <button class="btn btn-primary" onclick="sendAsk()" id="askSendBtn">Send</button>
+        </div>
     </div>
 </div>
 {% endblock %}
