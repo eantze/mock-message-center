@@ -814,6 +814,38 @@ a:hover { text-decoration: underline; }
     color: #999;
     font-style: italic;
 }
+.chat-bubble-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.chat-bubble-wrapper.user { align-items: flex-end; }
+.chat-bubble-wrapper.model,
+.chat-bubble-wrapper.thinking { align-items: flex-start; }
+
+.chat-rating-row {
+    display: flex;
+    gap: 4px;
+    padding-left: 4px;
+}
+.chat-rating-btn {
+    background: none;
+    border: 1px solid #dde1e6;
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 14px;
+    cursor: pointer;
+    line-height: 1.4;
+    transition: background 0.15s, border-color 0.15s;
+}
+.chat-rating-btn:hover { background: #f0f2f5; border-color: #bbb; }
+.chat-rating-thanks {
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+    padding-left: 4px;
+}
+
 .ask-input-row {
     display: flex;
     gap: 8px;

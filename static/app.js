@@ -66,14 +66,64 @@ function closeAskModal(evt) {
     document.getElementById('askModal').style.display = 'none';
 }
 
+var askTurn = 0;
+
 function addBubble(role, text) {
     var history = document.getElementById('askChatHistory');
+    var wrapper = document.createElement('div');
+    wrapper.className = 'chat-bubble-wrapper ' + role;
+
     var bubble = document.createElement('div');
     bubble.className = 'chat-bubble ' + role;
     bubble.textContent = text;
-    history.appendChild(bubble);
+    wrapper.appendChild(bubble);
+
+    // Add thumbs up/down only on model responses
+    if (role === 'model') {
+        askTurn++;
+        var turn = askTurn;
+        var msgData = document.getElementById('msgData');
+        var messageId = msgData ? msgData.getAttribute('data-message-id') : 'unknown';
+
+        var ratingRow = document.createElement('div');
+        ratingRow.className = 'chat-rating-row';
+
+        var upBtn = document.createElement('button');
+        upBtn.className = 'chat-rating-btn';
+        upBtn.title = 'Helpful';
+        upBtn.innerHTML = '👍';
+        upBtn.onclick = function() { rateResponse('thumbs_up', messageId, turn, ratingRow); };
+
+        var downBtn = document.createElement('button');
+        downBtn.className = 'chat-rating-btn';
+        downBtn.title = 'Not helpful';
+        downBtn.innerHTML = '👎';
+        downBtn.onclick = function() { rateResponse('thumbs_down', messageId, turn, ratingRow); };
+
+        ratingRow.appendChild(upBtn);
+        ratingRow.appendChild(downBtn);
+        wrapper.appendChild(ratingRow);
+    }
+
+    history.appendChild(wrapper);
     history.scrollTop = history.scrollHeight;
-    return bubble;
+    return wrapper;
+}
+
+function rateResponse(rating, messageId, turn, ratingRow) {
+    // Fire GA4 event
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'ai_response_rated', {
+            rating: rating,
+            message_id: messageId,
+            conversation_turn: turn
+        });
+    }
+    // Visual feedback — replace buttons with confirmation
+    ratingRow.innerHTML =
+        '<span class="chat-rating-thanks">' +
+        (rating === 'thumbs_up' ? '👍 Thanks for the feedback!' : '👎 Thanks — we\'ll improve.') +
+        '</span>';
 }
 
 function sendAsk() {
